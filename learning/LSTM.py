@@ -1,3 +1,5 @@
+# 230402 예시 lSTM
+
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
@@ -9,7 +11,7 @@ data = pd.read_csv('temperature_data.csv', index_col=0, parse_dates=True)
 
 # 입력 및 출력 변수 설정
 y = data['temperature'].values
-
+# print(y)
 # 데이터 정규화
 scaler_y = MinMaxScaler()
 y_scaled = scaler_y.fit_transform(y.reshape(-1, 1))
@@ -33,7 +35,7 @@ model.add(Dense(units=n_future))
 
 # 모델 컴파일 및 학습
 model.compile(optimizer='adam', loss='mean_squared_error')
-model.fit(X_train, y_train, epochs=100, batch_size=32)
+model.fit(X_train, y_train, epochs=10, batch_size=32)
 
 # 예측 (새로운 데이터에 대한 예측을 수행해야 함)
 X_new = np.array([y_scaled[-n_past:]]).reshape(1, n_past, 1)
