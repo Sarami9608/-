@@ -39,7 +39,8 @@ model.fit(X_train, y_train, epochs=100, batch_size=32)
 X_new = np.array([y_scaled[-n_past:]]).reshape(1, n_past, 1)
 predictions = model.predict(X_new)
 predictions = scaler_y.inverse_transform(predictions)  # 정규화된 값을 원래 스케일로 변환
-
+pData = pd.DataFrame(predictions)
+pData.to_csv('temperature_pData.csv', index=False)
 # 예측 결과 출력
 for i, prediction in enumerate(predictions[0]):
     print(f"예측된 다음 날 {i//60:02d}:{i%60:02d} 시간 기온: {prediction:.2f}도")
