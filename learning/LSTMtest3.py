@@ -1,74 +1,60 @@
 # 230404
-
-import pandas as pd
 import numpy as np
+import pandas as pd
+import matplotlib as plt
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
 from keras.models import Sequential
 from keras.layers import LSTM, Dense
-import matplotlib.pyplot as plt
-from keras.callbacks import EarlyStopping
 
-# 데이터 불러오기
-data = pd.read_csv('power_consumption_data.csv', parse_dates=['datetime'], index_col='datetime')
-
-# 정규화
-scaler = MinMaxScaler(feature_range=(0, 1))
-data_scaled = scaler.fit_transform(data)
-
-# 시퀀스 데이터 생성 (1일 간격)
 def create_sequences(data, seq_length):
-    x = []
-    y = []
-
+    x, y = [], []
     for i in range(len(data) - seq_length - 1):
         x.append(data[i:(i + seq_length)])
         y.append(data[i + seq_length])
-
     return np.array(x), np.array(y)
 
-seq_length = 24 * 60
-x, y = create_sequences(data_scaled, seq_length)
+# 데이터 불러오기
+data = pd.read_csv('power_consumption_data.csv')
 
-# 학습 및 테스트 데이터로 분류 (다음 날만 예측)
-train_size = int(len(x) * 0.99)
-x_train, x_test = x[:train_size], x[train_size:]
-y_train, y_test = y[:train_size], y[train_size:]
+# 시간 정보를 추가 (파생변수 생성)
+# 시간 정보를 추가 (파생변수 생성)
+data['date'] = pd.to_datetime(data['datetime'])
+data['hour'] = data['date'].dt.hour
+data['minute'] = data['date'].dt.minute
+# 데이터 정규화
+scaler = MinMaxScaler()
+data[['power_consumption', 'hour', 'minute']] = scaler.fit_transform(data[['power_consumption', 'hour', 'minute']])
 
-# LSTM 모델 구축
+# 시퀀스 생성
+seq_length = 1440
+x, y = create_sequences(data[['power_consumption', 'hour', 'minute']].values, seq_length)
+
+# 학습 데이터와 테스트 데이터로 분할
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.5, shuffle=False)
+
+# LSTM 모델 구성
 model = Sequential()
-model.add(LSTM(50, input_shape=(x_train.shape[1], x_train.shape[2]), return_sequences=False))
-model.add(Dense(1))
-model.compile(optimizer='adam', loss='mean_squared_error')
+model.add(LSTM(128, input_shape=(seq_length, 3), return_sequences=True))
+model.add(LSTM(64, return_sequences=False))
+model.add(Dense(3))
 
-# 모델 훈련
-early_stop = EarlyStopping(monitor='val_loss', patience=10)
-history = model.fit(x_train, y_train, epochs=100, batch_size=64, validation_split=0.1, callbacks=[early_stop], shuffle=False)
+# 모델 학습
+model.compile(optimizer='adam', loss='mse')
+model.fit(x_train, y_train, batch_size=128, epochs=20, validation_data=(x_test, y_test))
 
-# 테스트 데이터 예측
-y_pred = model.predict(x_test)
+# 예측
+predictions = model.predict(x_test)
 
-# 예측 결과 역정규화
-y_test_inv = scaler.inverse_transform(y_test)
-y_pred_inv = scaler.inverse_transform(y_pred)
-
-# 예측 결과 출력
-pred_df = pd.DataFrame({'Actual': y_test_inv.flatten(), 'Predicted': y_pred_inv.flatten()})
-print(pred_df.head(1440))  # 다음 날 하루에 대한 1분 간격 예측치 출력
-
-
-# 예측 결과 역정규화 및 평가
-y_test_inv = scaler.inverse_transform(y_test)
-y_pred_inv = scaler.inverse_transform(y_pred)
-
-# 예측 결과 출력
-pred_df = pd.DataFrame({'Actual': y_test_inv.flatten(), 'Predicted': y_pred_inv.flatten()})
-print(pred_df)
-predictions = scaler.inverse_transform(pred_df)  # 정규화된 값을 원래 스케일로 변환
-pData = pd.DataFrame(predictions)
-pData.to_csv('temperature_pData.csv', index=False)
-# 예측 결과 시각화
-plt.figure(figsize=(16, 8))
-plt.plot(y_test_inv, label='Actual')
-plt.plot(y_pred_inv, label='Predicted')
+# 정규화된 값을 원래 스케일로 되돌림
+predictions_inv = scaler.inverse_transform(predictions)
+# 결과 그래프 출력
+plt.figure(figsize=(12, 6))
+plt.plot(predictions_inv, label='Predicted')
+plt.xlabel('Day')
+plt.ylabel('Power Consumption')
+plt.title('Power Consumption Prediction')
 plt.legend()
 plt.show()
+pData = pd.DataFrame(predictions_inv)
+pData.to_csv('Power_consumption_pData.csv', index=False)
