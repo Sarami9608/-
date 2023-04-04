@@ -11,8 +11,8 @@
 
 # TODO : 2. 오라클과 연동하기 위한 DAO 클래스와 데이터를 다루기 위한 VO를 생성합니다.
 #           DB 폴더를 생성하고 해당 폴더에 VO와 DAO 를 생성합니다. 
-#           VO의 경우에는 conent_id , date , consumption, state_label
-#           DAO의 경우에는 현재 2가지를 필요로 합니다.
+#           VO의 경우에는 concent_id , date , consumption, state_label
+#           DAO의 경우에는 현재 2개의 기능을 필요로 합니다.
 #           학습을 위해 해당 콘센트 ID에 해당하는 데이터를 전부 가져옵니다. 필요한 데이터 date , consumption
 #           아두이노 측에서 데이터가 들어온 경우, 학습을 통해 분류와 예측치 비교를 진행한 후 데이터를 테이블에 저장합니다. concent_id, date , consumption, state_label
 #           ** 추가적인 부분 : 시계열 예측치를 전용 테이블에 저장 
