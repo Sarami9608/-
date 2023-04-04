@@ -11,8 +11,10 @@ power_consumption_data = []
 for dt in datetimes:
     if 15 <= dt.hour <= 21:
         power = np.random.uniform(90, 120)
+    elif 10 < dt.hour < 15 :
+        power = np.random.uniform(10, 15)
     else:
-        power = np.random.uniform(-5, 10)
+        power = np.random.uniform(-5, 5)
 
     power_consumption_data.append({'datetime': dt, 'power_consumption': power})
 

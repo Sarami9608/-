@@ -1,7 +1,7 @@
 import paho.mqtt.client as mqtt
 
 # MQTT 브로커 정보
-broker_address = ""
+broker_address = "119.200.31.252"
 broker_port = 8883
 mqtt_user = ""
 mqtt_password = ""
