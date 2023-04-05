@@ -48,13 +48,27 @@ predictions = model.predict(x_test)
 
 # 정규화된 값을 원래 스케일로 되돌림
 predictions_inv = scaler.inverse_transform(predictions)
-# 결과 그래프 출력
-plt.figure(figsize=(12, 6))
-plt.plot(predictions_inv, label='Predicted')
-plt.xlabel('Day')
-plt.ylabel('Power Consumption')
-plt.title('Power Consumption Prediction')
-plt.legend()
-plt.show()
+# # 결과 그래프 출력
+# plt.figure(figsize=(12, 6))
+# plt.plot(predictions_inv, label='Predicted')
+# plt.xlabel('Day')
+# plt.ylabel('Power Consumption')
+# plt.title('Power Consumption Prediction')
+# plt.legend()
+# plt.show()
 pData = pd.DataFrame(predictions_inv)
 pData.to_csv('Power_consumption_pData.csv', index=False)
+
+# 예측 결과를 저장할 빈 리스트 생성
+predictions_list = []
+
+for pred in predictions_inv:
+    power, hour, minute = pred
+    hour = int(round(hour))
+    minute = int(round(minute))
+    
+    # 예측 결과를 리스트에 추가
+    predictions_list.append({"hour": f"{hour:02d}:{minute:02d}", "power_consumption": power})
+
+# 리스트를 사용하여 DataFrame 생성
+predictions_df = pd.DataFrame(predictions_list)
