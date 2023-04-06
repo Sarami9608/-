@@ -244,4 +244,4 @@ WHERE c.CONID = p.CONID
 
 
 
-# TODO : 7. 
+# TODO : 7. ?? 추가할 부분이 있을까? 상권씨와 상의를 할 필요가 있음
