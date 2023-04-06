@@ -72,3 +72,4 @@ for pred in predictions_inv:
 
 # 리스트를 사용하여 DataFrame 생성
 predictions_df = pd.DataFrame(predictions_list)
+pData.to_csv('Power_consumption_pHData.csv', index=False)

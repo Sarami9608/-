@@ -13,7 +13,7 @@ data1 = data[['power_consumption']]
 
 
 # KMeans 모델 초기화
-kmeans = KMeans(n_clusters=3, random_state=0)
+kmeans = KMeans(n_clusters=2, random_state=0)
 
 # 모델 학습
 kmeans.fit(data1)
