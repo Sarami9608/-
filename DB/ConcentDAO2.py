@@ -227,7 +227,7 @@ WHERE c.CONID = p.CONID
     def getWait(self,conid):
         self.connect()
         try:
-            #  P_MEMBER 테이블에서 CONIDP_DATE,ENERGY 값을 가져옵니다.
+            #  P_MEMBER 테이블에서 wait 설정 값을 가져옵니다.(wait on , wait off - string 타입)
             self.cursor.execute(f'SELECT WAIT FROM P_MEMBER WHERE CONID ={conid}')
             # list 형태로 데이터를 보낸다.
             row = self.cursor.fetchall()
