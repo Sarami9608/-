@@ -157,12 +157,12 @@ class ConcentDAO:
         print(f'vo : {concentVO}')
         vo = concentVO
         self.connect()
-#         qurey = f'INSERT INTO P_CONCENT VALUES ({vo.getConID()},sysdate,{vo.getEnergy()},{vo.getState()})'
+#         query = f'INSERT INTO P_CONCENT VALUES ({vo.getConID()},sysdate,{vo.getEnergy()},{vo.getState()})'
 #         dictionary로 작성을 하는 경우
-        qurey = f'INSERT INTO P_CONCENT VALUES (\'{vo["CONID"]}\',sysdate,{vo["energy"]},{vo["p_state"]})'
+        query = f'INSERT INTO P_CONCENT VALUES (\'{vo["CONID"]}\',sysdate,{vo["energy"]},{vo["p_state"]})'
         try:
             #  P_CONCENT 테이블로 데이터 값을 입력합니다.
-            self.cursor.execute(qurey)
+            self.cursor.execute(query)
             print('execute')
             # 결과를 커밋
             self.connection.commit()
@@ -182,18 +182,19 @@ class ConcentDAO:
         print(f'vos : {vos}')
         print(f'vos : {type(vos)}')
         self.connect()
-        
+        query = ""
         try:
             print("execute")
             for vo in  vos:
                 # dictionary로 작성을 하는 경우
                 print('in for')
-                qurey = f'INSERT INTO P_PREDICT VALUES (\'{vo["CONID"]}\',\'{vo["p_date"]}\',{vo["energy"]},{vo["p_state"]})'
-                #  P_CONCENT 테이블로 데이터 값을 입력합니다.
-                self.cursor.execute(qurey)
-                print("for execute")
-                # 결과를 커밋
-                self.connection.commit()
+                query += f'INSERT INTO P_PREDICT VALUES (\'{vo["CONID"]}\',\'{vo["p_date"]}\',{vo["energy"]},{vo["p_state"]})'
+                print(query)
+            #  P_CONCENT 테이블로 데이터 값을 입력합니다.
+            self.cursor.execute(query)
+            print("for execute")
+            # 결과를 커밋
+            self.connection.commit()
         except cx_Oracle.DatabaseError as e:
             error_code = 3
             self.write_error_log(error_code)
