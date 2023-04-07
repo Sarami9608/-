@@ -33,7 +33,6 @@ class ConcentDAO:
     def disconnect(self):
         try:
             self.cursor.close()
-            self.cursor = None
             print("disconnected")
         except cx_Oracle.DatabaseError as e:
             # 커서를 닫는 중 에러가 발생한 경우, 예외를 발생시킵니다.
@@ -43,7 +42,6 @@ class ConcentDAO:
         finally:
             try:
                 self.connection.close()
-                self.connection = None
             except cx_Oracle.DatabaseError as e:
                 # 연결을 닫는 중 에러가 발생한 경우, 예외를 발생시킵니다.
                 error_code = 2
@@ -176,7 +174,7 @@ class ConcentDAO:
 
 # TODO : 3. 학습한 데이터를 통해 예측한 데이터를 P_PREDICT 테이블에 추가합니다.
     def insert_Predict(self,concentVO):
-        vos = [concentVO]
+        vos = concentVO
         print('start')
         print(f'vo : {concentVO}')
         print(f'vos : {vos}')
@@ -191,10 +189,10 @@ class ConcentDAO:
                 query += f'INSERT INTO P_PREDICT VALUES (\'{vo["CONID"]}\',\'{vo["p_date"]}\',{vo["energy"]},{vo["p_state"]})'
                 print(query)
             #  P_CONCENT 테이블로 데이터 값을 입력합니다.
-            self.cursor.execute(query)
-            print("for execute")
-            # 결과를 커밋
-            self.connection.commit()
+                self.cursor.execute(query)
+                print("for execute")
+                # 결과를 커밋
+                self.connection.commit()
         except cx_Oracle.DatabaseError as e:
             error_code = 3
             self.write_error_log(error_code)
