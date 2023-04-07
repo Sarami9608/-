@@ -1,6 +1,5 @@
 import cx_Oracle
 import logging
-import ConcentVO
 from datetime import datetime
 
 class ConcentDAO:
@@ -21,8 +20,9 @@ class ConcentDAO:
 
     def connect(self):
         try:
-            self.connection = cx_Oracle.connect('username/password@hostname:port/servicename')
+            self.connection = cx_Oracle.connect("campus_b_230329_3","smhrd3","project-db-stu3.ddns.net:1525/XE")
             self.cursor = self.connection.cursor()
+            print("connected")
         except cx_Oracle.DatabaseError as e:
             # 데이터베이스와의 연결이 실패한 경우, 예외를 발생시킵니다.
             error_code = 1
@@ -34,6 +34,7 @@ class ConcentDAO:
         try:
             self.cursor.close()
             self.cursor = None
+            print("disconnected")
         except cx_Oracle.DatabaseError as e:
             # 커서를 닫는 중 에러가 발생한 경우, 예외를 발생시킵니다.
             error_code = 5
@@ -137,7 +138,7 @@ class ConcentDAO:
         self.connect()
         try:
             #  P_CONCENT 테이블에서 P_DATE,ENERGY 값을 가져옵니다.
-            self.cursor.execute(f'SELECT P_DATE,ENERGY FROM P_CONCENT WHERE CONID = {conid}')
+            self.cursor.execute(f'SELECT P_DATE,ENERGY FROM P_CONCENT WHERE CONID = \'{conid}\'')
             # list 형태로 데이터를 보낸다.
             rows = self.cursor.fetchall()
             return rows
@@ -152,39 +153,51 @@ class ConcentDAO:
 # TODO : 2. esp32 모듈로 부터 들어온 데이터를 P_CONCENT 테이블에 추가한다.
 
     def insert_Energy(self,concentVO):
+        print('start')
+        print(f'vo : {concentVO}')
         vo = concentVO
         self.connect()
-        qurey = f'INSERT INTO P_CONCENT VALUES ({vo.getConID()},sysdate,{vo.getEnergy()},{vo.getState()})'
-        # dictionary로 작성을 하는 경우
-        #qurey = f'INSERT INTO P_CONCENT VALUES ({vo['CONID']},sysdate,{vo['energy]},{vo[p_state]})'
+#         qurey = f'INSERT INTO P_CONCENT VALUES ({vo.getConID()},sysdate,{vo.getEnergy()},{vo.getState()})'
+#         dictionary로 작성을 하는 경우
+        qurey = f'INSERT INTO P_CONCENT VALUES (\'{vo["CONID"]}\',sysdate,{vo["energy"]},{vo["p_state"]})'
         try:
             #  P_CONCENT 테이블로 데이터 값을 입력합니다.
             self.cursor.execute(qurey)
+            print('execute')
             # 결과를 커밋
             self.connection.commit()
         except cx_Oracle.DatabaseError as e:
             error_code = 3
+            print('error')
             self.write_error_log(error_code)
         finally:
             self.disconnect()
             return None       
 
 # TODO : 3. 학습한 데이터를 통해 예측한 데이터를 P_PREDICT 테이블에 추가합니다.
-    def insert_Energy(self,concentVO):
-        vos = concentVO
+    def insert_Predict(self,concentVO):
+        vos = [concentVO]
+        print('start')
+        print(f'vo : {concentVO}')
+        print(f'vos : {vos}')
+        print(f'vos : {type(vos)}')
         self.connect()
+        
         try:
+            print("execute")
             for vo in  vos:
-                qurey = f'INSERT INTO P_CONCENT VALUES ({vo.getConID()},{vo.getDate()},{vo.getEnergy()},{vo.getState()})'
                 # dictionary로 작성을 하는 경우
-                #qurey = f'INSERT INTO P_CONCENT VALUES ({vo['CONID']},{vo['p_date']}},{vo['energy]},{vo[p_state]})'
+                print('in for')
+                qurey = f'INSERT INTO P_PREDICT VALUES (\'{vo["CONID"]}\',\'{vo["p_date"]}\',{vo["energy"]},{vo["p_state"]})'
                 #  P_CONCENT 테이블로 데이터 값을 입력합니다.
                 self.cursor.execute(qurey)
+                print("for execute")
                 # 결과를 커밋
                 self.connection.commit()
         except cx_Oracle.DatabaseError as e:
             error_code = 3
             self.write_error_log(error_code)
+            print('error')
         finally:
             self.disconnect()
             return None      
@@ -200,12 +213,12 @@ class ConcentDAO:
 SELECT c.P_STATE AS CONCENT_STATE, p.P_STATE AS PREDICT_STATE
 FROM P_CONCENT c, P_PREDICT p
 WHERE c.CONID = p.CONID
-    AND p.CONID = {conid}
+    AND p.CONID = f'{conid}'
     AND TO_CHAR(c.P_DATE, 'YYYYMMDDHH24MI') = TO_CHAR(p.P_DATE, 'YYYYMMDDHH24MI')
     AND TO_CHAR(c.P_DATE, 'YYYYMMDDHH24MI') = (
         SELECT TO_CHAR(P_DATE, 'YYYYMMDDHH24MI') AS DATE_TIME
         FROM P_CONCENT
-        WHERE CONID = {conid}
+        WHERE CONID = f'{conid}'
         ORDER BY P_DATE DESC
         FETCH FIRST 1 ROWS ONLY
     )
@@ -227,8 +240,8 @@ WHERE c.CONID = p.CONID
     def getWait(self,conid):
         self.connect()
         try:
-            #  P_MEMBER 테이블에서 wait 설정 값을 가져옵니다.(wait on , wait off - string 타입)
-            self.cursor.execute(f'SELECT WAIT FROM P_MEMBER WHERE CONID ={conid}')
+            #  P_MEMBER 테이블에서 CONIDP_DATE,ENERGY 값을 가져옵니다.
+            self.cursor.execute(f'SELECT WAIT FROM P_MEMBER WHERE CONID =\'{conid}\'')
             # list 형태로 데이터를 보낸다.
             row = self.cursor.fetchall()
             return row
@@ -242,7 +255,6 @@ WHERE c.CONID = p.CONID
 # TODO : 6. P_MESSAGE 테이블의 사용자에게 전달할 메세지를 저장합니다.
 # P_MESSAGE에 있는 테이블에서 P_DATE와 P_TIME의 차이는 무엇인가? - 이 부분은 수행하기 전에 테이블 구성을 파악할 필요가 있음
 
-#yyyy-mm-dd
-# hh24:mm
+#yyyy-mm-dd hh24:mm
 
 # TODO : 7. ?? 추가할 부분이 있을까? 상권씨와 상의를 할 필요가 있음
