@@ -242,6 +242,7 @@ WHERE c.CONID = p.CONID
 # TODO : 6. P_MESSAGE 테이블의 사용자에게 전달할 메세지를 저장합니다.
 # P_MESSAGE에 있는 테이블에서 P_DATE와 P_TIME의 차이는 무엇인가? - 이 부분은 수행하기 전에 테이블 구성을 파악할 필요가 있음
 
-
+#yyyy-mm-dd
+# hh24:mm
 
 # TODO : 7. ?? 추가할 부분이 있을까? 상권씨와 상의를 할 필요가 있음
