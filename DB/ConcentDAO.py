@@ -128,6 +128,7 @@ class ConcentDAO:
                     self.newID.append(row)
             # return의 list가 비어있는 경우 mqtt 추가X
             result = self.newID
+            #  newID 빈칸으로 초기화
             self.newID = []
            
             
@@ -252,9 +253,25 @@ class ConcentDAO:
         finally:
             self.disconnect()
             return row       
-# TODO : 6. P_MESSAGE 테이블의 사용자에게 전달할 메세지를 저장합니다.
-# P_MESSAGE에 있는 테이블에서 P_DATE와 P_TIME의 차이는 무엇인가? - 이 부분은 수행하기 전에 테이블 구성을 파악할 필요가 있음
-
-
-
-# TODO : 7. ?? 추가할 부분이 있을까? 상권씨와 상의를 할 필요가 있음
+        
+# TODO : 데이터의 상태를 업데이트 한다. how 기존의 콘센트 데이터를 전부 가져온다.
+#        kmean 에 적용 해당 id의 시간에 따른 state를 update한다. 
+#       과정 3. update set으로 concent 테이블의 시간에 따른 각 데이터의 state를 현재 비지도 학습의 결과로 업데이트 한다.
+    def updateState(self,concentVO,conid):
+        vos = concentVO
+        self.connect()
+        try:
+            for vo in  vos:
+                # dictionary로 작성을 하는 경우
+                print(f'update p_concent set p_state = {vo["p_state"]} where CONID = "{conid}" and p_date = "{vo["p_date"]}"')
+                #  P_CONCENT 테이블로 데이터 값을 입력합니다.
+                self.cursor.execute(f"UPDATE p_concent SET p_state={vo['p_state']} WHERE CONID='{conid}' AND p_date='{vo['p_date']}'")
+                # 결과를 커밋
+                self.connection.commit()
+        except cx_Oracle.DatabaseError as e:
+            error_code = 3
+            self.write_error_log(error_code)
+            print('error')
+        finally:
+            self.disconnect()
+            return None      
