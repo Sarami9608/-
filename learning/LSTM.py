@@ -1,48 +1,59 @@
-# 230402 예시 lSTM
 
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
+from sklearn.model_selection import train_test_split
 from keras.models import Sequential
-from keras.layers import Dense, LSTM
+from keras.layers import LSTM, Dense
 
-# 데이터 불러오기
-data = pd.read_csv('temperature_data.csv', index_col=0, parse_dates=True)
+class PowerConsumptionPredictor:
 
-# 입력 및 출력 변수 설정
-y = data['temperature'].values
-# print(y)
-# 데이터 정규화
-scaler_y = MinMaxScaler()
-y_scaled = scaler_y.fit_transform(y.reshape(-1, 1))
+    def __init__(self, seq_length=1440):
+        self.seq_length = seq_length
+        self.scaler = MinMaxScaler()
+        
+    def create_sequences(self, data):
+        x, y = [], []
+        for i in range(len(data) - self.seq_length - 1):
+            x.append(data[i:(i + self.seq_length)])
+            y.append(data[i + self.seq_length])
+        return np.array(x), np.array(y)
 
-# 시간별 데이터로 나누기
-n_past = 60*24  # 과거 1일 동안의 데이터 사용
-n_future = 60*24  # 다음날 예측할 데이터의 크기
-X_train = []
-y_train = []
+    def preprocess_data(self, data_df):
+        data_df[['energy', 'hour', 'minute']] = self.scaler.fit_transform(data_df[['energy', 'hour', 'minute']])
+        x, y = self.create_sequences(data_df[['energy', 'hour', 'minute']].values)
+        return train_test_split(x, y, test_size=0.5, shuffle=False)
 
-for i in range(n_past, len(data) - n_future):
-    X_train.append(y_scaled[i-n_past:i])
-    y_train.append(y_scaled[i:i+n_future])
+    def build_model(self):
+        model = Sequential()
+        model.add(LSTM(128, input_shape=(self.seq_length, 3), return_sequences=True))
+        model.add(LSTM(64, return_sequences=False))
+        model.add(Dense(3))
+        model.compile(optimizer='adam', loss='mse')
+        return model
 
-X_train, y_train = np.array(X_train), np.array(y_train).squeeze()
+    def predict_next_day(self, model, x):
+        last_day_data = x[-1]
+        last_day_data = np.expand_dims(last_day_data, axis=0)
+        predictions_list = []
 
-# LSTM 모델 생성
-model = Sequential()
-model.add(LSTM(units=64, activation='relu', input_shape=(X_train.shape[1], 1)))
-model.add(Dense(units=n_future))
+        for i in range(1440):
+            prediction = model.predict(last_day_data)
+            power, hour, minute = self.scaler.inverse_transform(prediction)[0]
+            hour, minute = int(round(hour)), int(round(minute))
+            predictions_list.append({'time': f"{hour:02d}:{minute:02d}", 'energy': power})
+            last_day_data = np.roll(last_day_data, -1, axis=1)
+            last_day_data[0, -1] = prediction
 
-# 모델 컴파일 및 학습
-model.compile(optimizer='adam', loss='mean_squared_error')
-model.fit(X_train, y_train, epochs=10, batch_size=32)
+        return pd.DataFrame(predictions_list)
 
-# 예측 (새로운 데이터에 대한 예측을 수행해야 함)
-X_new = np.array([y_scaled[-n_past:]]).reshape(1, n_past, 1)
-predictions = model.predict(X_new)
-predictions = scaler_y.inverse_transform(predictions)  # 정규화된 값을 원래 스케일로 변환
-pData = pd.DataFrame(predictions)
-pData.to_csv('temperature_pData.csv', index=False)
-# 예측 결과 출력
-for i, prediction in enumerate(predictions[0]):
-    print(f"예측된 다음 날 {i//60:02d}:{i%60:02d} 시간 기온: {prediction:.2f}도")
+    def run(self, data_df):
+        x_train, x_test, y_train, y_test = self.preprocess_data(data_df)
+        model = self.build_model()
+        model.fit(x_train, y_train, batch_size=128, epochs=5, validation_data=(x_test, y_test))
+        predictions_df = self.predict_next_day(model, x_train)
+        predictions_df['date'] = (pd.datetime.now() + pd.Timedelta(days=1)).strftime('%Y-%m-%d')
+        predictions_df['p_date'] = pd.to_datetime(predictions_df['date'] + ' ' + predictions_df['time'], format='%Y-%m-%d %H:%M')
+        predictions_df.drop(['date', 'time'], axis=1, inplace=True)
+        predictions_df = predictions_df[['p_date', 'energy']]
+        return predictions_df

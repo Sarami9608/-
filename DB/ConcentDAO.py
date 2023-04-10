@@ -157,14 +157,14 @@ class ConcentDAO:
         
 # TODO : 2. esp32 모듈로 부터 들어온 데이터를 P_CONCENT 테이블에 추가한다.
 
-    def insert_Energy(self,concentVO):
+    def insert_Energy(self,concentVO,conid):
         print('start')
         print(f'vo : {concentVO}')
         vo = concentVO
         self.connect()
 #         query = f'INSERT INTO P_CONCENT VALUES ({vo.getConID()},sysdate,{vo.getEnergy()},{vo.getState()})'
 #         dictionary로 작성을 하는 경우
-        query = f'INSERT INTO P_CONCENT VALUES (\'{vo["CONID"]}\',sysdate,{vo["energy"]},{vo["p_state"]})'
+        query = f'INSERT INTO P_CONCENT VALUES (\'{conid}\',sysdate,{vo["energy"]},{vo["p_state"]})'
         try:
             #  P_CONCENT 테이블로 데이터 값을 입력합니다.
             self.cursor.execute(query)
@@ -180,16 +180,16 @@ class ConcentDAO:
             return None       
 
 # TODO : 3. 학습한 데이터를 통해 예측한 데이터를 P_PREDICT 테이블에 추가합니다.
-    def insert_Predict(self,concentVO):
+    def insert_Predict(self,concentVO,conid):
         vos = concentVO
         self.connect()
         query = ""
         try:
             for vo in  vos:
                 # dictionary로 작성을 하는 경우
-                print(f'INSERT INTO P_PREDICT VALUES (\'{vo["CONID"]}\',\'{vo["p_date"]}\',{vo["energy"]},{vo["p_state"]})')
+                print(f'INSERT INTO P_PREDICT VALUES (\'{conid}\',\'{vo["p_date"]}\',{vo["energy"]},{vo["p_state"]})')
                 #  P_CONCENT 테이블로 데이터 값을 입력합니다.
-                self.cursor.execute(f'INSERT INTO P_PREDICT VALUES (\'{vo["CONID"]}\',{vo["p_date"]},{vo["energy"]},{vo["p_state"]})')
+                self.cursor.execute(f'INSERT INTO P_PREDICT VALUES (\'{conid}\',{vo["p_date"]},{vo["energy"]},{vo["p_state"]})')
                 # 결과를 커밋
                 self.connection.commit()
         except cx_Oracle.DatabaseError as e:
