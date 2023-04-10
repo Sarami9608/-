@@ -85,7 +85,11 @@ class MQTTClient:
         self.client.publish(self.publish_relay, payload)
 
     def new_kmean(self):
-        self.kmeans.newLabel()
+        # 데이터 가져오기 
+        data = self.dao.learningData(self.con_id)
+        # 데이터프레임으로 변환
+        df = self.pd.DataFrame(data, columns=['p_date', 'energy'])  
+        self.kmeans.newLabel(df)
     def new_LSTM(self):
         # 데이터 가져오기 
         data = self.dao.learningData(self.con_id)

@@ -1,7 +1,6 @@
 from sklearn.cluster import KMeans
 import pandas as pd 
 import numpy as np
-import DB.ConcentDAO as DAO
 
 
 class Kmean:
@@ -9,14 +8,10 @@ class Kmean:
     def __init__(self):
         # KMeans 모델 초기화
         self.kmeans = KMeans(n_clusters=2, random_state=0)
-        self.dao = DAO.ConcentDAO()
     # Series 형태의 데이터를????? 리스트 to pd(Sereis)
     # 모델 생성
-    def newLabel(self,conid):
-        data = self.dao.learningData(conid)
-        # 데이터프레임으로 변환
-        df = pd.DataFrame(data, columns=['p_date', 'energy'])  
-        self.kmeans.fit(df['energy'])
+    def newLabel(self,data):
+        self.kmeans.fit(data['energy'])
 
     # set a labeling
     def predictLabel_concent(self,data):

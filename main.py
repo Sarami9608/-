@@ -1,5 +1,5 @@
 
-from mqtt import realMqtt
+from . import realMqtt
 from DB import ConcentDAO
 i = 0
 mqttList = []
@@ -20,5 +20,5 @@ while True:
 
         # 1분마다 id 개수 판단
 
-        
+
 # TODO 
