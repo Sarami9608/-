@@ -1,12 +1,16 @@
 import cx_Oracle
 import logging
-from datetime import datetime
+from datetime import datetime,timedelta
+
 
 class ConcentDAO:
     concentID = set()
     newID = []
     concentCount = 0
     def __init__(self):
+        
+# 
+        # Oracle Instant Client 라이브러리가 있는 경로
         self.connection = None
         self.cursor = None
         self.error_codes = {
@@ -115,6 +119,7 @@ class ConcentDAO:
 # 가져온 객체들 중 concentID 값 중 신규 콘센트 아이디 값을 판별하여 반환한다. for MQTT 통신 구독 및 발행을 위해
     def get_member_concent_ids(self):
         self.connect()
+        rows = []
         try:
             # 멤버 테이블에서 모든 CONID 값을 가져옵니다.
             self.cursor.execute('SELECT DISTINCT(CONID) FROM P_MEMBER')
@@ -141,21 +146,32 @@ class ConcentDAO:
             return result     
             
 # TODO : 1. 학습을 위한 해당 콘센트 아이디의 date 값과 에너지 값을 가져온다.
-    def learningData(self,conid):
+
+    def learningData(self, conid):
+        print("learing 데이터를 가져옵니다.")
         self.connect()
+        rows = []
         try:
-            #  P_CONCENT 테이블에서 P_DATE,ENERGY 값을 가져옵니다.
-            self.cursor.execute(f'SELECT P_DATE,ENERGY FROM P_CONCENT WHERE CONID = \'{conid}\'')
-            # list 형태로 데이터를 보낸다.
+            # P_CONCENT 테이블에서 P_DATE, ENERGY 값을 가져옵니다.
+            # 오늘 날짜
+            # 어제 23시 59분 59초
+            print("query 문을 실행합니다. 1")
+            yesterday = datetime.now() - timedelta(days=1)
+            print(yesterday)
+            yesterday = yesterday.replace(hour=23, minute=59, second=59)
+            print(yesterday)
+            yesterday_str = yesterday.strftime('%Y-%m-%d %H:%M:%S')
+            print(yesterday_str)
+            self.cursor.execute(f"SELECT P_DATE, ENERGY FROM P_CONCENT WHERE CONID = '{conid}' AND P_DATE >= TO_DATE('2023-03-01', 'YYYY-MM-DD') AND P_DATE <= TO_DATE('{yesterday_str}', 'YYYY-MM-DD HH24:MI:SS')")
+            # list 형태로 데이터를 반환합니다.
             rows = self.cursor.fetchall()
-            
-            
+            print(rows)
         except cx_Oracle.DatabaseError as e:
             error_code = 3
             self.write_error_log(error_code)
         finally:
             self.disconnect()
-            return rows       
+            return rows
         
 # TODO : 2. esp32 모듈로 부터 들어온 데이터를 P_CONCENT 테이블에 추가한다.
 
@@ -276,3 +292,9 @@ class ConcentDAO:
         finally:
             self.disconnect()
             return None      
+# TODO : 6. P_MESSAGE 테이블의 사용자에게 전달할 메세지를 저장합니다.
+# P_MESSAGE에 있는 테이블에서 P_DATE와 P_TIME의 차이는 무엇인가? - 이 부분은 수행하기 전에 테이블 구성을 파악할 필요가 있음
+
+
+
+# TODO : 7. ?? 추가할 부분이 있을까? 상권씨와 상의를 할 필요가 있음
