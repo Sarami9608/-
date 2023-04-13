@@ -29,6 +29,7 @@ class MQTTClient:
         self.client.connect(self.broker_address, self.broker_port)
         print(f"{self.con_id}연결에 성공했습니다.")
         self.stateNow = False
+        self.lstmNow = False
         # 토픽 구독
         self.client.subscribe(self.energy_topic)
         print(f"{self.energy_topic}")
@@ -48,7 +49,7 @@ class MQTTClient:
         # json 문자열을 파이썬 딕셔너리로 변환
         data_dict = json.loads(data_str)
         
-        if self.stateNow == True:
+        if self.stateNow == True and self.lstmNow == True:
             # TODO 생성된 kmean 모델에 데이터를 넣어 상태를 구분한다.
             data_dict["p_state"]= self.kmeans.predictLabel_concent(np.array(data_dict['energy']).reshape(-1, 1))
             # TODO 상태가 포함된 데이터를 테이블에 추가한다.
@@ -117,10 +118,16 @@ class MQTTClient:
         if df.shape[0] > 1440*28:
             self.kmeans.newLabel(df)
             if self.stateNow == False:
-                print('state를 변경합니다.')
-                p_state = self.kmeans.predictLabel_concent(df['energy'].values.reshape(-1, 1))
-                df['p_state'] = p_state
-                self.dao.updateState(df,self.con_id)
+                # print('state를 변경합니다.')
+                # p_state = self.kmeans.predictLabel_concent(df['energy'].values.reshape(-1, 1))
+                # df['p_state'] = p_state
+                # print(df)
+                # result = []
+                # for row in df.itertuples(index=False):
+                #     data = {'p_date': row.p_date, 'energy': row.energy, 'p_state': row.p_state}
+                #     result.append(data)
+                # self.dao.updateState(result,self.con_id)
+                # self.stateNow = True
                 self.stateNow = True
         print(f"{self.con_id}가 KMEAN학습을  종료합니다.")
 
@@ -133,17 +140,34 @@ class MQTTClient:
         df = pd.DataFrame(data, columns=['p_date', 'energy']) 
         # 주어진 튜플을 데이터프레임으로 변환
         df['p_date'] = pd.to_datetime(df['p_date'], format='%Y-%m-%d %H:%M:%S')
-
+        print(df)
         # datetime 열에서 hour와 minute 정보 추출하여 각각 새로운 열로 추가
         df['hour'] = df['p_date'].dt.hour
         df['minute'] = df['p_date'].dt.minute
+        print(df)
         # 데이터의 수가 충분하지 않을 경우 동작하지 않는다.
         # 데이터의 양이 28일을 초과하는 경우에만 동작을 수행
         if df.shape[0] > 1440*28 and self.stateNow == True:
+            df = df.sort_values(by='p_date')
             predict_data = self.lstm.run(df)
-            p_state = self.kmeans.predictLabel_concent(predict_data['energy'])
+            predict_data = predict_data.sort_values(by='p_date')
+            # kmean 상태 적용
+            print(predict_data)
+            print("소비 전력 상태 예측을 시작합니다.")
+            p_state = self.kmeans.predictLabel_concent(predict_data['energy'].values.astype('float64').reshape(-1, 1))
+            print("p_state")
+            print(p_state)
             predict_data['p_state'] = p_state
-            self.dao.insert_Predict(concentVO=predict_data, conid=self.con_id)
+            print("predict_data")
+            print(predict_data)
+            print('DB에 데이터 입력을 수행합니다.')
+            result = []
+            for row in predict_data.itertuples(index=False):
+                print(row)
+                data = {'p_date': row.p_date, 'energy': row.energy, 'p_state': row.p_state}
+                result.append(data)
+            self.dao.insert_Predict(concentVO=result, conid=self.con_id)
+            self.lstmNow = True
         print(f"{self.con_id}가  LSTM 학습을 종료합니다.")
 
 

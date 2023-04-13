@@ -20,8 +20,11 @@ class Kmean:
         # self.kmeans.fit(data.values.reshape(-1, 1))
         # print('kmean 학습을 완료합니다.')
         print(data)
+        print(type(data))
+        print(data.dtype)
         print(self.kmeans)
         predict_label = self.kmeans.predict(data)
+        print("비지도 학습 분류를 시작합니다.")
         # 클러스터링 결과 출력
         clust_list = []
         for i, label in enumerate(self.kmeans.labels_):

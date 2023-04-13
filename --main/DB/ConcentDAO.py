@@ -162,7 +162,7 @@ class ConcentDAO:
             print(yesterday)
             yesterday_str = yesterday.strftime('%Y-%m-%d %H:%M:%S')
             print(yesterday_str)
-            self.cursor.execute(f"SELECT P_DATE, ENERGY FROM P_CONCENT WHERE CONID = '{conid}' AND P_DATE >= TO_DATE('2023-03-01', 'YYYY-MM-DD') AND P_DATE <= TO_DATE('{yesterday_str}', 'YYYY-MM-DD HH24:MI:SS')")
+            self.cursor.execute(f"SELECT P_DATE, ENERGY FROM P_CONCENT WHERE CONID = '{conid}' AND P_DATE >= TO_DATE('2023-03-01', 'YYYY-MM-DD') AND P_DATE <= TO_DATE('{yesterday_str}', 'YYYY-MM-DD HH24:MI:SS') order by P_DATE")
             # list 형태로 데이터를 반환합니다.
             rows = self.cursor.fetchall()
             print(rows)
@@ -200,14 +200,18 @@ class ConcentDAO:
 # TODO : 3. 학습한 데이터를 통해 예측한 데이터를 P_PREDICT 테이블에 추가합니다.
     def insert_Predict(self,concentVO,conid):
         vos = concentVO
+        print("Predict 데이터를 DB 저장 시작합니다.")
+        print(vos)
         self.connect()
         query = ""
         try:
+            print(vos)
             for vo in  vos:
+                date_str = vo['p_date'].strftime('%Y-%m-%d %H:%M:%S')
+                print(vo)
                 # dictionary로 작성을 하는 경우
-                print(f'INSERT INTO P_PREDICT VALUES (\'{conid}\',\'{vo["p_date"]}\',{vo["energy"]},{vo["p_state"]})')
                 #  P_CONCENT 테이블로 데이터 값을 입력합니다.
-                self.cursor.execute(f'INSERT INTO P_PREDICT VALUES (\'{conid}\',{vo["p_date"]},{vo["energy"]},{vo["p_state"]})')
+                self.cursor.execute(f"INSERT INTO P_PREDICT VALUES ('{conid}', TO_DATE('{date_str}', 'YYYY-MM-DD HH24:MI:SS'), {round(vo['energy'], 5)}, {vo['p_state']})")
                 # 결과를 커밋
                 self.connection.commit()
         except cx_Oracle.DatabaseError as e:
@@ -277,14 +281,17 @@ class ConcentDAO:
     def updateState(self,concentVO,conid):
         vos = concentVO
         self.connect()
+        print(vos)
         try:
             for vo in  vos:
                 # dictionary로 작성을 하는 경우
-                print(f'update p_concent set p_state = {vo["p_state"]} where CONID = "{conid}" and p_date = "{vo["p_date"]}"')
+                date_str = vo['p_date'].strftime('%Y-%m-%d %H:%M:%S')
                 #  P_CONCENT 테이블로 데이터 값을 입력합니다.
-                self.cursor.execute(f"UPDATE p_concent SET p_state={vo['p_state']} WHERE CONID='{conid}' AND p_date='{vo['p_date']}'")
+                print(vo)
+                print(date_str)
+                self.cursor.execute(f"UPDATE p_concent SET p_state={vo['p_state']} WHERE CONID='{conid}' AND p_date=TO_DATE('{date_str}', 'YYYY-MM-DD HH24:MI:SS')")
                 # 결과를 커밋
-                self.connection.commit()
+            self.connection.commit()
         except cx_Oracle.DatabaseError as e:
             error_code = 3
             self.write_error_log(error_code)
