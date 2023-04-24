@@ -38,4 +38,5 @@ while True:
                 # 새롭게 추가된 콘센트를 가져온다.
                 newConcent = dao.get_member_concent_ids()
                 for new in newConcent:
+                    # 새롭게 추가된 콘센트가 있는 경우 객체를 새롭게 생성한다.
                     mqttList.append(realMqtt.MQTTClient(new[0]))
